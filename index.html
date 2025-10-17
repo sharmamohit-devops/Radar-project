@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Ultrasonic Radar - Real-time Object Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Particle Background -->
+    <div id="particles-background"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Initializing Radar System...</div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="tech-grid"></div>
+            <div class="floating-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title" id="hero-title">
+                    <span class="typing-text">Arduino Ultrasonic Radar</span>
+                </h1>
+                <p class="hero-subtitle">Real-time object detection and visualization system</p>
+                <p class="hero-description">A comprehensive radar system built with Arduino Uno, HC-SR04 ultrasonic
+                    sensor, and servo motor, featuring web-based visualization and data logging capabilities.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn--neon btn--primary" onclick="scrollToSection('radar-demo')">
+                        <span class="btn-text">Live Demo</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                    <button class="btn btn--neon btn--outline" onclick="scrollToSection('code-section')">
+                        <span class="btn-text">View Code</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                    <button class="btn btn--neon btn--secondary" onclick="scrollToSection('media-gallery')">
+                        <span class="btn-text">Watch Demo</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Radar Demo -->
+    <section id="radar-demo" class="radar-section">
+        <div class="container">
+            <h2 class="section-title glow-text">Interactive Radar Demo</h2>
+            <div class="radar-container">
+                <div class="radar-display glass-card">
+                    <div class="radar-startup" id="radar-startup">
+                        <div class="startup-text">RADAR SYSTEM READY</div>
+                        <div class="startup-indicator"></div>
+                    </div>
+                    <canvas id="radarCanvas" width="400" height="400"></canvas>
+                    <div class="radar-info">
+                        <div class="info-item neon-border">
+                            <span class="label">Distance</span>
+                            <span id="distance-reading" class="neon-text">-- cm</span>
+                        </div>
+                        <div class="info-item neon-border">
+                            <span class="label">Angle</span>
+                            <span id="angle-reading" class="neon-text">--°</span>
+                        </div>
+                        <div class="info-item neon-border">
+                            <span class="label">Objects</span>
+                            <span id="object-count" class="neon-text">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="radar-controls glass-card">
+                    <div class="control-group">
+                        <button id="radarToggle" class="btn btn--neon btn--primary floating-btn">
+                            <span class="btn-text">Start Radar</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                        <button id="clearDetections" class="btn btn--neon btn--outline">
+                            <span class="btn-text">Clear</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <label for="sensitivity" class="form-label neon-text">Range Sensitivity</label>
+                        <div class="slider-container">
+                            <input type="range" id="sensitivity" class="neon-slider" min="50" max="200" value="150">
+                            <div class="slider-track"></div>
+                        </div>
+                        <span id="sensitivity-value" class="neon-text">150cm</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tabbed Interface -->
+    <section id="code-section" class="tabs-section">
+        <div class="container">
+            <div class="tabs">
+                <button class="tab-btn active neon-border" data-tab="hardware">
+                    <span>Hardware & Wiring</span>
+                    <div class="tab-glow"></div>
+                </button>
+                <button class="tab-btn neon-border" data-tab="arduino">
+                    <span>Arduino Code</span>
+                    <div class="tab-glow"></div>
+                </button>
+                <button class="tab-btn neon-border" data-tab="web">
+                    <span>Web Interface</span>
+                    <div class="tab-glow"></div>
+                </button>
+                <button class="tab-btn neon-border" data-tab="data">
+                    <span>Data Logging</span>
+                    <div class="tab-glow"></div>
+                </button>
+            </div>
+
+            <!-- Hardware Tab -->
+            <div id="hardware" class="tab-content active">
+                <div class="grid-2">
+                    <div class="card glass-card hover-glow">
+                        <div class="card__body">
+                            <h3 class="glow-text">Components Required</h3>
+                            <div class="component-list">
+                                <div class="component-item neon-border">
+                                    <span class="name">Arduino Uno</span>
+                                    <span class="desc">Main microcontroller</span>
+                                    <span class="price neon-text">₹500</span>
+                                </div>
+                                <div class="component-item neon-border">
+                                    <span class="name">HC-SR04 Ultrasonic Sensor</span>
+                                    <span class="desc">Distance measurement</span>
+                                    <span class="price neon-text">₹150</span>
+                                </div>
+                                <div class="component-item neon-border">
+                                    <span class="name">SG90 Servo Motor</span>
+                                    <span class="desc">360° rotation mechanism</span>
+                                    <span class="price neon-text">₹200</span>
+                                </div>
+                                <div class="component-item neon-border">
+                                    <span class="name">Jumper Wires</span>
+                                    <span class="desc">Connections</span>
+                                    <span class="price neon-text">₹50</span>
+                                </div>
+                                <div class="component-item neon-border">
+                                    <span class="name">Breadboard</span>
+                                    <span class="desc">Prototyping board</span>
+                                    <span class="price neon-text">₹100</span>
+                                </div>
+                                <div class="component-item neon-border">
+                                    <span class="name">Buzzer</span>
+                                    <span class="desc">Audio feedback (optional)</span>
+                                    <span class="price neon-text">₹30</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card glass-card hover-glow">
+                        <div class="card__body">
+                            <h3 class="glow-text">Specifications</h3>
+                            <div class="spec-list">
+                                <div class="spec-item neon-border">
+                                    <span class="label">Range:</span>
+                                    <span class="value neon-text">2cm - 200cm</span>
+                                </div>
+                                <div class="spec-item neon-border">
+                                    <span class="label">Accuracy:</span>
+                                    <span class="value neon-text">±3mm</span>
+                                </div>
+                                <div class="spec-item neon-border">
+                                    <span class="label">Angle:</span>
+                                    <span class="value neon-text">15° - 165°</span>
+                                </div>
+                                <div class="spec-item neon-border">
+                                    <span class="label">Refresh Rate:</span>
+                                    <span class="value neon-text">10Hz</span>
+                                </div>
+                                <div class="spec-item neon-border">
+                                    <span class="label">Power:</span>
+                                    <span class="value neon-text">5V USB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arduino Code Tab -->
+            <div id="arduino" class="tab-content">
+                <div class="card glass-card hover-glow">
+                    <div class="card__body">
+                        <h3 class="glow-text">Arduino Code</h3>
+                        <div class="code-container">
+                            <pre class="neon-code"><code>#include &lt;Servo.h&gt;
+#include &lt;NewPing.h&gt;
+
+#include <Servo.h>
+
+// Define connection pins
+const int trigPin = 9;
+const int echoPin = 10;
+const int servoPin = 11;
+const int buzzerPin = 12; // Buzzer pin
+
+// Define variables
+long duration;
+int distance;
+int angle = 0; // Start at 0 degrees
+int step = 1; // Move 1 degree at a time
+bool movingClockwise = true; // Direction flag
+
+// Detection parameters
+const int detectionThreshold = 30; // Distance in cm to trigger buzzer (adjust as needed)
+bool objectDetected = false;
+
+Servo radarServo; // Create servo object
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT); // Set buzzer pin as output
+  radarServo.attach(servoPin);
+  Serial.begin(9600); // Start serial communication
+}
+
+void loop() {
+  
+  // Move the servo to the current angle
+  radarServo.write(angle);
+  
+  // Get distance measurement from ultrasonic sensor
+  distance = calculateDistance();
+  
+  // Check if object is detected within threshold
+  if (distance > 0 && distance < detectionThreshold) {
+    objectDetected = true;
+    tone(buzzerPin, 1000); // Sound buzzer at 1000Hz
+  } else {
+    objectDetected = false;
+    noTone(buzzerPin); // Turn off buzzer
+  }
+  
+  // Send data to Processing in the format: "angle,distance"
+  Serial.print(angle);
+  Serial.print(",");
+  Serial.println(distance);
+  
+  // Calculate the next angle
+  if (movingClockwise) {
+    angle += step; // Increase the angle
+  } else {
+    angle -= step; // Decrease the angle
+  }
+  
+  // Change direction when we hit the limits (0 or 180)
+  if (angle >= 180) {
+    movingClockwise = false; // Now move counter-clockwise
+    angle = 180; // Ensure it doesn't exceed 180
+  } 
+  if (angle <= 0) {
+    movingClockwise = true; // Now move clockwise
+    angle = 0; // Ensure it doesn't go below 0
+  }
+  
+  // Small delay for stability and to control sweep speed
+  delay(30);
+}
+
+// Function to calculate distance
+int calculateDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+  return distance;
+}
+</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Interface Tab -->
+            <div id="web" class="tab-content">
+                <div class="card glass-card hover-glow">
+                    <div class="card__body">
+                        <h3 class="glow-text">Web Interface Code</h3>
+                        <p>JavaScript code for real-time radar visualization:</p>
+                        <div class="code-container">
+                            <pre class="neon-code"><code>// Radar canvas animation
+import processing.serial.*;
+
+Serial myPort; // Serial object
+int angle = 0;
+int distance = 0;
+int maxDistance = 200; // Maximum distance to display (in cm)
+boolean objectDetected = false;
+
+// Colors
+color radarGreen = color(0, 255, 100);
+color backgroundColor = color(10, 20, 30);
+color gridColor = color(50, 100, 50, 100);
+color textColor = color(220, 220, 220);
+color warningColor = color(255, 50, 50);
+color glowColor = color(0, 255, 100, 50);
+
+// Radar sweep history
+ArrayList<Integer> distances = new ArrayList<Integer>();
+ArrayList<Integer> angles = new ArrayList<Integer>();
+PFont font;
+
+void setup() {
+  size(800, 600, P2D); // Use P2D for smoother rendering
+  smooth(8); // Higher anti-aliasing
+  
+  // Load a professional font
+  font = createFont("Arial", 16, true);
+  textFont(font);
+  
+  // List all available serial ports
+  printArray(Serial.list());
+  
+  // Initialize serial communication - change the index to match your Arduino's port
+  String portName = Serial.list()[2]; // Adjust as needed
+  myPort = new Serial(this, portName, 9600);
+  myPort.bufferUntil('\n'); // Read data until newline
+  
+  // Initialize distance history
+  for (int i = 0; i < 360; i++) {
+    distances.add(0);
+    angles.add(i);
+  }
+}
+
+void draw() {
+  // Draw gradient background
+  drawGradientBackground();
+  drawRadar();
+  drawGrid();
+  drawObject();
+  drawInfoPanel();
+  
+  // Flash warning if object detected
+  if (objectDetected) {
+    drawWarning();
+  }
+}
+
+void drawGradientBackground() {
+  for (int i = 0; i < height; i++) {
+    float t = map(i, 0, height, 0, 1);
+    stroke(lerpColor(color(10, 20, 30), color(20, 40, 60), t));
+    line(0, i, width, i);
+  }
+}
+
+void drawRadar() {
+  pushMatrix();
+  translate(width/2, height/2); // Move origin to center
+  
+  // Draw semi-circular radar background with gradient
+  noFill();
+  for (int i = 1; i <= 6; i++) {
+    stroke(lerpColor(gridColor, color(0, 0, 0, 0), i/6.0));
+    strokeWeight(1);
+    arc(0, 0, i * 50, i * 50, PI, TWO_PI);
+  }
+  
+  // Draw angle lines with subtle fade
+  for (int i = 0; i <= 180; i += 15) { // Finer angle increments
+    float x = cos(radians(i)) * maxDistance;
+    float y = sin(radians(i)) * maxDistance;
+    stroke(gridColor);
+    strokeWeight(0.5);
+    line(0, 0, x, -y);
+    // Draw angle labels
+    fill(textColor);
+    textSize(12);
+    textAlign(CENTER, CENTER);
+    if (i % 30 == 0) { // Label only major angles
+      text(i + "°", cos(radians(i)) * (maxDistance + 20), -sin(radians(i)) * (maxDistance + 20));
+    }
+  }
+  
+  // Draw distance circle labels
+  for (int i = 1; i <= 4; i++) {
+    int dist = i * 50;
+    fill(textColor);
+    textSize(12);
+    textAlign(CENTER, CENTER);
+    text(dist + "cm", 0, -dist - 10);
+  }
+  
+  // Draw sweeping line with fade effect, moving forward and backward
+  strokeWeight(3);
+  float cycle = frameCount % 360; // Full cycle: 0° to 180° and back to 0°
+  float sweepAngle;
+  if (cycle < 180) {
+    sweepAngle = map(cycle, 0, 180, 0, 180); // Forward sweep
+  } else {
+    sweepAngle = map(cycle, 180, 360, 180, 0); // Backward sweep
+  }
+  float endX = cos(radians(sweepAngle)) * maxDistance;
+  float endY = sin(radians(sweepAngle)) * maxDistance;
+  stroke(lerpColor(radarGreen, color(0, 0, 0, 0), 0.3));
+  line(0, 0, endX, -endY);
+  
+  popMatrix();
+}
+
+void drawGrid() {
+  // Draw subtle grid lines
+  stroke(gridColor);
+  strokeWeight(0.5);
+  
+  // Horizontal lines
+  for (int i = 0; i < height; i += 40) {
+    line(0, i, width, i);
+  }
+  
+  // Vertical lines
+  for (int i = 0; i < width; i += 40) {
+    line(i, 0, i, height);
+  }
+}
+
+void drawObject() {
+  pushMatrix();
+  translate(width/2, height/2);
+  
+  // Draw all detected points from history with glow
+  for (int i = 0; i < angles.size(); i++) {
+    int histAngle = angles.get(i);
+    int histDistance = distances.get(i);
+    
+    if (histDistance > 0 && histDistance < maxDistance) {
+      float x = cos(radians(histAngle)) * histDistance;
+      float y = sin(radians(histAngle)) * histDistance;
+      
+      // Draw glow effect
+      noStroke();
+      fill(glowColor);
+      float glowSize = map(histDistance, 0, maxDistance, 20, 10);
+      ellipse(x, -y, glowSize, glowSize);
+      
+      // Draw point
+      fill(radarGreen);
+      float pointSize = map(histDistance, 0, maxDistance, 8, 4);
+      ellipse(x, -y, pointSize, pointSize);
+    }
+  }
+  
+  // Draw most recent detection with enhanced highlight
+  if (distance > 0 && distance < maxDistance) {
+    float x = cos(radians(angle)) * distance;
+    float y = sin(radians(angle)) * distance;
+    
+    // Glow effect for recent detection
+    noStroke();
+    fill(warningColor, 80);
+    ellipse(x, -y, 20, 20);
+    
+    // Highlighted point
+    fill(warningColor);
+    ellipse(x, -y, 12, 12);
+    
+    // Draw distance line
+    stroke(radarGreen, 150);
+    strokeWeight(1);
+    line(x, -y, x, height/2 - 40);
+    
+    // Draw distance text
+    fill(textColor);
+    textSize(14);
+    textAlign(LEFT, CENTER);
+    text(nf(distance, 1, 1) + " cm", x + 10, -y);
+  }
+  
+  popMatrix();
+}
+
+void drawInfoPanel() {
+  // Draw semi-transparent info panel with rounded corners
+  fill(0, 0, 20, 200);
+  noStroke();
+  rect(20, height - 110, width - 40, 100, 15);
+  
+  // Draw text info
+  fill(textColor);
+  textSize(18);
+  textAlign(LEFT, CENTER);
+  text("Arduino Radar System", 40, height - 90);
+  text("Angle: " + nf(angle, 1, 1) + "°", 40, height - 60);
+  text("Distance: " + nf(distance, 1, 1) + " cm", 40, height - 30);
+  
+  textAlign(RIGHT, CENTER);
+  text("Max Distance: " + maxDistance + " cm", width - 40, height - 90);
+  text("Object Detected: " + (objectDetected ? "YES" : "NO"), width - 40, height - 60);
+  
+  if (objectDetected) {
+    fill(warningColor);
+    text("WARNING: OBJECT DETECTED!", width - 40, height - 30);
+  }
+}
+
+void drawWarning() {
+  // Subtle pulsing warning overlay
+  float pulse = map(sin(millis() * 0.005), -1, 1, 20, 60);
+  fill(warningColor, pulse);
+  noStroke();
+  rect(0, 0, width, height, 20);
+}
+
+void serialEvent(Serial myPort) {
+  try {
+    String data = myPort.readStringUntil('\n').trim();
+    if (data != null) {
+      String[] values = split(data, ',');
+      if (values.length == 2) {
+        angle = int(values[0]);
+        distance = int(values[1]);
+        
+        // Update history
+        distances.set(angle, distance);
+        
+        // Check if object is detected (within 30cm)
+        objectDetected = (distance > 0 && distance < 30);
+      }
+    }
+  } catch (Exception e) {
+    println("Error reading serial data: " + e.getMessage());
+  }
+}
+
+void keyPressed() {
+  // Adjust max distance with up/down arrows
+  if (keyCode == UP) {
+    maxDistance += 10;
+  } else if (keyCode == DOWN) {
+    maxDistance = max(10, maxDistance - 10);
+  }
+}
+</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Logging Tab -->
+            <div id="data" class="tab-content">
+                <div class="card glass-card hover-glow">
+                    <div class="card__body">
+                        <h3 class="glow-text">Recent Detections</h3>
+                        <div class="data-table">
+                            <table class="neon-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Angle</th>
+                                        <th>Distance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detection-log">
+                                    <tr>
+                                        <td>15:30:04</td>
+                                        <td>156°</td>
+                                        <td>45 cm</td>
+                                        <td><span class="status status--warning pulse">Close</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>15:30:03</td>
+                                        <td>112°</td>
+                                        <td>89 cm</td>
+                                        <td><span class="status status--success pulse">Normal</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>15:30:02</td>
+                                        <td>78°</td>
+                                        <td>123 cm</td>
+                                        <td><span class="status status--success pulse">Normal</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>15:30:01</td>
+                                        <td>45°</td>
+                                        <td>67 cm</td>
+                                        <td><span class="status status--success pulse">Normal</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="section-title glow-text">Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card glass-card hover-glow float-animation">
+                    <div class="feature-icon neon-glow">🎯</div>
+                    <h3 class="neon-text">Real-time Scanning</h3>
+                    <p>Continuous 150° sweep with live data visualization</p>
+                </div>
+                <div class="feature-card glass-card hover-glow float-animation">
+                    <div class="feature-icon neon-glow">🖥️</div>
+                    <h3 class="neon-text">Web Visualization</h3>
+                    <p>Interactive radar display in browser with animations</p>
+                </div>
+                <div class="feature-card glass-card hover-glow float-animation">
+                    <div class="feature-icon neon-glow">📊</div>
+                    <h3 class="neon-text">Data Logging</h3>
+                    <p>CSV export for analysis and research</p>
+                </div>
+                <div class="feature-card glass-card hover-glow float-animation">
+                    <div class="feature-icon neon-glow">⚙️</div>
+                    <h3 class="neon-text">Adjustable Range</h3>
+                    <p>Configurable detection sensitivity and range</p>
+                </div>
+                <div class="feature-card glass-card hover-glow float-animation">
+                    <div class="feature-icon neon-glow">🔊</div>
+                    <h3 class="neon-text">Audio Feedback</h3>
+                    <p>Buzzer alerts for close objects detection</p>
+                </div>
+                <div class="feature-card glass-card hover-glow float-animation">
+                    <div class="feature-icon neon-glow">📂</div>
+                    <h3 class="neon-text">Open Source</h3>
+                    <p>Complete code and schematics available</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Media Gallery -->
+    <section id="media-gallery" class="media-section">
+        <div class="container">
+            <h2 class="section-title glow-text">Project Gallery</h2>
+            <div class="media-grid">
+                <div class="media-card glass-card hover-glow"
+                    onclick="document.getElementById('setupModal').style.display='block'">
+                    <div class="media-placeholder neon-border">
+                        <span class="media-icon neon-glow">📷</span>
+                        <p class="neon-text">Project Setup</p>
+                    </div>
+                </div>
+                <div class="media-card glass-card hover-glow"
+                    onclick="document.getElementById('videoModal').style.display='block'">
+                    <div class="media-placeholder neon-border">
+                        <span class="media-icon neon-glow">🎥</span>
+                        <p class="neon-text">Demo Video</p>
+                    </div>
+                </div>
+                <div class="media-card glass-card hover-glow"
+                    onclick="document.getElementById('circuitModal').style.display='block'">
+                    <div class="media-placeholder neon-border">
+                        <span class="media-icon neon-glow">📋</span>
+                        <p class="neon-text">Circuit Diagram</p>
+                    </div>
+                </div>
+                <div class="media-card glass-card hover-glow"
+                    onclick="document.getElementById('performanceModal').style.display='block'">
+                    <div class="media-placeholder neon-border">
+                        <span class="media-icon neon-glow">📊</span>
+                        <p class="neon-text">Performance Data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modals -->
+    <div id="setupModal" class="modal">
+        <span class="close" onclick="document.getElementById('setupModal').style.display='none'">&times;</span>
+        <img class="modal-content"
+            src="https://howtomechatronics.com/wp-content/uploads/2015/07/Arduino-Radar-Complete.jpg"
+            alt="Project Setup">
+    </div>
+
+    <div id="videoModal" class="modal">
+        <span class="close" onclick="document.getElementById('videoModal').style.display='none'">&times;</span>
+        <iframe class="modal-content" width="560" height="315" src="video.mp4"
+            frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <div id="circuitModal" class="modal">
+        <span class="close" onclick="document.getElementById('circuitModal').style.display='none'">&times;</span>
+        <img class="modal-content"
+            src="circuit-modal.jpeg"
+            alt="Circuit Diagram">
+    </div>
+
+    <div id="performanceModal" class="modal">
+        <span class="close" onclick="document.getElementById('performanceModal').style.display='none'">&times;</span>
+        <img class="modal-content"
+            src="https://howtomechatronics.com/wp-content/uploads/2015/07/Radar-Print-Screen-02.png"
+            alt="Performance Data">
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer glass-card">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="glow-text">Arduino Ultrasonic Radar</h3>
+                    <p>Open source radar system for object detection and visualization.</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="neon-text">Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/sharmamohit-devops/Radar-project" target="_blank"
+                                class="neon-link">GitHub Repository</a></li>
+                        <li><a href="https://www.linkedin.com/in/mohit-sharma-js/" target="_blank"
+                                class="neon-link">LinkedIn Profile</a></li>
+                        <li><a href="mailto:mohitfrontendev@gmail.com" class="neon-link">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="neon-text">Downloads</h4>
+                    <button class="btn btn--neon btn--primary btn--sm">
+                        <span class="btn-text"><a href="https://github.com/sharmamohit-devops/Radar-project">Download
+                                Project Files</a></span>
+                        <div class="btn-glow"></div>
+                    </button>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Arduino Radar Project. Built with HTML5, CSS3, JavaScript.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="index.js"></script>
+    <script src="index1.js"></script>
+    <script>
+        // Modal functionality
+        window.onclick = function (event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        }
+    </script>
+</body>
+
+</html>
